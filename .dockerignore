@@ -1,0 +1,10 @@
+Dockerfile
+docker-compose.yml
+.dockerignore
+.*
+**README*
+test*
+gulp*
+log*
+*.log
+**/*.log

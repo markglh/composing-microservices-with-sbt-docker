@@ -1,0 +1,16 @@
+version: '2'
+
+services:
+
+    aggregator.service:
+        image: aggregator-service:1.0.0-SNAPSHOT
+        expose:
+            - "80"
+            - "8080"
+            - "9000"
+        ports:
+            - "8080:8080"
+        #volumes:
+        #    - ../../core-journaling-service:/opt/app
+        #command: ["-jvm-debug", "5005","-Dhttp.port=80","-Dcassandra.host=cassandra","-Dcassandra.port=9042","-Dcassandra.username=cassandra","-Dcassandra.password=cassandra","-Dcassandra.cluster.name=WeightWatchers","-Dcassandra.defaultConsistencyLevel=LOCAL_QUORUM","-Dcore.profile.service.settings.baseUrl=http://user-profile.core","-Dcore.journey.service.settings.baseUrl=http://milestone.core","-Dapp.timeout.seconds=300","run"]
+        stdin_open: true

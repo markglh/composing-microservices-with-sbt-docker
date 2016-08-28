@@ -19,6 +19,7 @@ public/version.json
 .cache
 *.swp
 .DS_Store
+*/.DS_Store
 projectFilesBackup
 .ensime*
 

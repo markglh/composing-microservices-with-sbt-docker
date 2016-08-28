@@ -15,6 +15,6 @@ object Bootstrap extends ServerApp {
     .withFallback(ConfigFactory.load())
 
   override def server(args: List[String]) = BlazeBuilder.bindHttp(8080, "0.0.0.0")
-    .mountService(AggregatorService.routes, "/")
+    .mountService(BeaconService.routes, "/")
     .start
 }

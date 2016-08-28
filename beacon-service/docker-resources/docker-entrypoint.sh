@@ -3,6 +3,10 @@
 set -e
 set -x
 
+/app/scripts/wait-for-it.sh -t 0 cassandra-node1:9042 -- echo "CASSANDRA Node1 started"
+/app/scripts/wait-for-it.sh -t 0 cassandra-node2:9042 -- echo "CASSANDRA Node2 started"
+/app/scripts/wait-for-it.sh -t 0 cassandra-node3:9042 -- echo "CASSANDRA Node3 started"
+
 APP_OPTS="-d64 \
           -server \
           -XX:MaxGCPauseMillis=500 \

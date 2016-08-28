@@ -2,7 +2,70 @@ version: '2'
 
 services:
 
-    aggregator.service:
+######## NGINX ########
+
+    nginx:
+        image: nginx
+        ports:
+            - "9000:80"
+        environment:
+            NGINX_PORT: 80
+        volumes:
+            - ./compose-resources/nginx:/etc/nginx
+        networks:
+            - dockernet
+
+######## CASSANDRA ########
+
+    cassandra-node1:
+        extends:
+            file: base-containers.yml
+            service: cassandra-base
+        volumes:
+            - markglh-cassandra-node1-data:/var/lib/cassandra # This bypasses the union filesystem, in favour of the host = faster.
+        ports:
+            - "9042:9042"
+
+    cassandra-node2:
+        extends:
+            file: base-containers.yml
+            service: cassandra-base
+        volumes:
+            - markglh-cassandra-node2-data:/var/lib/cassandra
+        environment:
+            CASSANDRA_SEEDS: "cassandra-node1"
+        ports:
+            - "9043:9042"
+
+    cassandra-node3:
+        extends:
+            file: base-containers.yml
+            service: cassandra-base
+        volumes:
+            - markglh-cassandra-node3-data:/var/lib/cassandra
+        environment:
+            CASSANDRA_SEEDS: "cassandra-node1"
+        ports:
+            - "9044:9042"
+
+    # This is a sneaky way to init the Cassandra keyspace
+    # We're using cqlsh from another instance (temp) of Cassandra to init the 3 nodes, then shutting it down
+    # This avoids having cqlsh in our service image and using the service entrypoint, which is the alternative
+    cassandra-init:
+        image: cassandra:2.1
+        volumes:
+            - ./compose-resources/cassandra:/init/scripts
+        command: bash /init/scripts/cassandra-init.sh
+        links:
+            - cassandra-node1:cassandra
+        restart: on-failure # Restart until we successfully run this script (it will fail until cassandra starts)
+        networks:
+            - dockernet
+
+
+######## SERVICES ########
+
+    aggregator-service:
         image: aggregator-service:1.0.0-SNAPSHOT
         expose:
             - "80"
@@ -10,7 +73,35 @@ services:
             - "9000"
         ports:
             - "8080:8080"
-        #volumes:
-        #    - ../../core-journaling-service:/opt/app
-        #command: ["-jvm-debug", "5005","-Dhttp.port=80","-Dcassandra.host=cassandra","-Dcassandra.port=9042","-Dcassandra.username=cassandra","-Dcassandra.password=cassandra","-Dcassandra.cluster.name=WeightWatchers","-Dcassandra.defaultConsistencyLevel=LOCAL_QUORUM","-Dcore.profile.service.settings.baseUrl=http://user-profile.core","-Dcore.journey.service.settings.baseUrl=http://milestone.core","-Dapp.timeout.seconds=300","run"]
         stdin_open: true
+        links:
+            - cassandra-node1:cassandra
+        restart: always
+        networks:
+            dockernet:
+                ipv4_address: 172.16.2.10
+
+
+######## SETUP ########
+
+# The custom bridge network allows us to specify static IPs for our services - useful for Nginx setup
+networks:
+    dockernet:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+            - subnet: 172.16.2.0/24
+              gateway: 172.16.2.1
+
+# We use names volumes to store cassandra data, this allows our data to persist between different compose files
+volumes:
+    markglh-cassandra-node1-data:
+        external:
+            name: markglh-cassandra-node1-data
+    markglh-cassandra-node2-data:
+        external:
+            name: markglh-cassandra-node2-data
+    markglh-cassandra-node3-data:
+        external:
+            name: markglh-cassandra-node3-data

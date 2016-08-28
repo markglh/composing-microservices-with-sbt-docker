@@ -1,6 +1,6 @@
 import sbt._
 
-name := "aggregator-service"
+name := "beacon-service"
 
 organization := "cakesolutions"
 
@@ -13,6 +13,7 @@ lazy val circeVersion = "0.4.1"
 
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.1.7",
+  "io.getquill" %% "quill-cassandra" % "0.9.0",
   "com.typesafe" % "config" % "1.3.0" % "compile",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.4.0" % "compile",
   "org.http4s" %% "http4s-dsl" % http4sVersion,
@@ -23,6 +24,19 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-jawn" % circeVersion,
   "org.mockito" % "mockito-core" % "1.10.19" % "test"
 )
+
+
+//---- sbt-assembly settings -----
+mainClass in assembly := Some("com.markglh.blog.Bootstrap")
+
+// Resolve duplicates for Sbt Assembly
+assemblyMergeStrategy in assembly := {
+  case PathList(xs @ _*) if xs.last == "io.netty.versions.properties" => MergeStrategy.rename
+  case other => (assemblyMergeStrategy in assembly).value(other)
+}
+
+
+
 
 // publish to artifacts directory
 publishArtifact in(Compile, packageDoc) := false
@@ -51,9 +65,10 @@ dockerfile in docker := {
   val artifactTargetPath = s"$imageAppBaseDir/${artifact.name}"
   val artifactTargetPath_ln = s"$imageAppBaseDir/${name.value}.jar"
 
-  //Define the entrypoint script
-  val entrypointScript = baseDir / "docker-entrypoint.sh"
-  val entrypointScriptTargetPath = s"$imageAppBaseDir/docker-entrypoint.sh"
+
+  //Define the resources which includes the entrypoint script
+  val dockerResourcesDir = baseDir / "docker-resources"
+  val dockerResourcesTargetPath = s"$imageAppBaseDir/"
 
   val confTarget = s"$imageAppBaseDir/conf/" //boot-configuration.conf goes here
 
@@ -64,11 +79,11 @@ dockerfile in docker := {
     env("APP_BASE", s"$imageAppBaseDir")
     env("APP_CONF", s"$confTarget")
     copy(artifact, artifactTargetPath)
-    copy(entrypointScript, entrypointScriptTargetPath)
+    copy(dockerResourcesDir, dockerResourcesTargetPath)
     //Symlink the service jar to a non version specific name
     run("ln", "-sf", s"$artifactTargetPath", s"$artifactTargetPath_ln")
     volume(s"$confTarget")
-    entryPoint(entrypointScriptTargetPath)
+    entryPoint(s"${dockerResourcesTargetPath}docker-entrypoint.sh")
   }
 }
 buildOptions in docker := BuildOptions(cache = false)

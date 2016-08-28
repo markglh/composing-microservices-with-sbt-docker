@@ -1,0 +1,16 @@
+version: '2'
+
+services:
+
+    # This avoids duplicating the common Cassandra configuration for each node
+    cassandra-base:
+        image: cassandra:2.1
+        networks:
+            - dockernet
+        environment:
+            WAIT_TIMEOUT: "60"
+            JVM_OPTS: "-Dcassandra.consistent.rangemovement=false"
+            CASSANDRA_CLUSTER_NAME: "DemoCluster"
+            CASSANDRA_ENDPOINT_SNITCH: "GossipingPropertyFileSnitch"
+            CASSANDRA_DC: "DATA"
+        restart: always # Sometimes it starts too fast, cheap way of retrying...

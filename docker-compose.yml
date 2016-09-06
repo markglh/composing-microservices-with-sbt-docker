@@ -65,8 +65,8 @@ services:
 
 ######## SERVICES ########
 
-    aggregator-service:
-        image: aggregator-service:1.0.0-SNAPSHOT
+    beacon-service:
+        image: beacon-service:1.0.0-SNAPSHOT
         expose:
             - "80"
             - "8080"
@@ -79,7 +79,23 @@ services:
         restart: always
         networks:
             dockernet:
-                ipv4_address: 172.16.2.10
+                ipv4_address: 172.16.2.11
+
+    tracking-service:
+        image: tracking-service:1.0.0-SNAPSHOT
+        expose:
+            - "80"
+            - "8080"
+            - "9000"
+        ports:
+            - "8081:8080"
+        stdin_open: true
+        links:
+            - cassandra-node1:cassandra
+        restart: always
+        networks:
+            dockernet:
+                ipv4_address: 172.16.2.12
 
 
 ######## SETUP ########

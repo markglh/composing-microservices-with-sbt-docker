@@ -3,54 +3,51 @@ package com.markglh.blog
 import java.util.UUID
 
 import com.markglh.blog.BeaconRepo.BeaconByLocation
+import io.circe._
+import io.circe.generic.auto._
+import io.getquill.{CassandraAsyncContext, SnakeCase}
 import org.http4s.client.blaze.PooledHttp1Client
-import org.http4s.dsl.{->, /, Root, _}
-import org.http4s.{HttpService, Uri}
+import org.http4s.dsl._
+import org.http4s.{Uri, _}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scalaz.concurrent.Task
+
 
 /**
   * Created by markh on 27/08/2016.
   */
 object BeaconService {
 
-  lazy val routes = {
+  val client = PooledHttp1Client()
 
-    val beaconService = new BeaconRepo() with Cassandra
+  implicit def circeJsonDecoder[A](implicit decoder: Decoder[A]) = org.http4s.circe.jsonOf[A]
 
-    val helloWorldService = HttpService {
-      case GET -> Root / "hello" / name =>
-        Ok(s"Hello, $name.")
-    }
+  implicit def circeJsonEncoder[A](implicit encoder: Encoder[A]) = org.http4s.circe.jsonEncoderOf[A]
 
-    val client = PooledHttp1Client()
+  def routes(beaconRepo: BeaconRepo[CassandraAsyncContext[SnakeCase]])(implicit ec: ExecutionContext) = HttpService {
 
-    def routes(implicit executionContext: ExecutionContext = ExecutionContext.global) = HttpService {
+    case request@GET -> Root / "beacons" / "locations" / locationId =>
 
-      case request@GET -> Root / "users" / username =>
-        //Ok(getUser(username))
-        Ok(s"Hi $username")
-      //Ok(Json.obj("origin" -> Json.fromString(request.remoteAddr.getOrElse("unknown"))))
+      println(s"****RetQuerying for $locationId")
+      val beacons = beaconRepo.findBeaconByLocation(UUID.fromString(locationId))
 
-      case request@GET -> Root / "beacons" =>
-        val beacon: Future[List[BeaconByLocation]] = beaconService.beaconByLocation(UUID.randomUUID())
-        println(beacon)
-        Ok(s"Hi beacon!!!!")
+      //println(s"****Returning $beacons")
 
-      case request@GET -> Root / "callself" / name =>
-        //val greetingList = Task.gatherUnordered(people.map(callSelf))
-        Ok(callSelf(name))
-    }
+      /*val beaconFut: Future[List[BeaconByLocation]] = Future {
+        List(BeaconByLocation(UUID.randomUUID(), UUID.randomUUID()))
+      }//.map(_.headOption.map(_.toString))*/
 
-    def callSelf(name: String): Task[String] = {
-      val target = Uri.uri("http://localhost:8080/users") / name
-      client.expect[String](target)
-    }
-
-    def getUser(username: String): Task[String] = ???
-
-    val people = Vector("Michael", "Jessica", "Ashley", "Christopher")
+      Ok(beacons)
   }
+
+  def callSelf(name: String): Task[String] = {
+    val target = Uri.uri("http://localhost:8080/users") / name
+    client.expect[String](target)
+  }
+
+  def getUser(username: String): Task[String] = ???
+
+  val people = Vector("Michael", "Jessica", "Ashley", "Christopher")
 
 }

@@ -101,6 +101,9 @@ Before we can start `composing` our services, we need to create and build the do
 
 #### sbt-assembly
 First though, we need a `fat jar` which can be executed within our container. For this we’re using [`sbt-assembly`](https://github.com/sbt/sbt-assembly). So let’s get started by importing the required sbt plugins and preparing our `plugins.sbt` and `build.sbt`.
+
+We require both the `sbt-assembly` and `sbt-docker` plugins
+
 ```scala
 resolvers += "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/"
 
@@ -108,6 +111,8 @@ addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.3")
 
 addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.4.0")
 ```
+We can then get to work on our build.sbt
+
 ```scala
 mainClass in assembly := Some("com.markglh.blog.Bootstrap")
 

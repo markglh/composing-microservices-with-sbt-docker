@@ -16,12 +16,12 @@ From the root directory:
 `docker-compose up`
 
 The aggregation service is exposed on the following url:
-http://localhost:9000/aggregator/locations/<locationId>/<epochTime>
-e.g: http://localhost:9000/aggregator/locations/6bcb1c95-a283-468a-a7ee-ce7f21168b71/1473156000
+`http://localhost:9000/aggregator/locations/<locationId>/<epochTime>`
+e.g: <http://localhost:9000/aggregator/locations/6bcb1c95-a283-468a-a7ee-ce7f21168b71/1473156000>
 
 Individual services are as follows:
-http://localhost:9000/beacons/locations/<locationdId>
-http://localhost:9000/tracking/beacons/<beaconId>/<epochTime>
+`http://localhost:9000/beacons/locations/<locationdId>`
+`http://localhost:9000/tracking/beacons/<beaconId>/<epochTime>`
 
 `Nginx` will route to the appropriate container based on the path
 

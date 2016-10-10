@@ -248,7 +248,7 @@ As you can see, we first block startup until all Cassandra nodes are available. 
 Finally we set our jvm arguments and start the service, notice that we make use of the `LOG_CONF` and `APP_BASE` environment variables which we defined in our `build.sbt` image. We have hard-coded the various GC properties - generally these are targeted at a known production environment. However it wouldn’t require much effort to make these configurable and instead provide them at runtime.
 
 #### What about Cassandra?
-We’re connecting to a Cassandra cluster, which will be defined later using the official Cassandra image from dockerhub (https://hub.docker.com/_/cassandra/). However we need to configure our app to connect to it, we do this in the `application.conf` of each service.
+We’re connecting to a Cassandra cluster, which will be defined later using the [official Cassandra image from dockerhub](https://hub.docker.com/_/cassandra/). However we need to configure our app to connect to it, we do this in the `application.conf` of each service.
 ```scala
 cassandra {
    keyspace = "tracking_service"

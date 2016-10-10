@@ -290,7 +290,7 @@ The `build-all.sh` script at the root level will automatically build all three s
 ### Moving On
 Today we've `dockerized` three services, built the images and defined the `entrypoints` ready to be composed.
 
-In part 2 we'll walkthrough the following
+In part 2 we'll walkthrough the following:
 
  - Creating `docker-compose.yml`, defining each service along with appropriate dependencies
  - Defining environment specific configuration using volumes

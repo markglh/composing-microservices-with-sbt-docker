@@ -12,14 +12,18 @@ docker volume create --name markglh-cassandra-node3-data
 
 ##Running the services
 From the root directory:
-`./build-all.sh`
-`docker-compose up`
+```bash
+./build-all.sh
+docker-compose up
+```
 
 The aggregation service is exposed on the following url:
+
 `http://localhost:9000/aggregator/locations/<locationId>/<epochTime>`
 e.g: <http://localhost:9000/aggregator/locations/6bcb1c95-a283-468a-a7ee-ce7f21168b71/1473156000>
 
 Individual services are as follows:
+
 `http://localhost:9000/beacons/locations/<locationdId>`
 
 `http://localhost:9000/tracking/beacons/<beaconId>/<epochTime>`
@@ -61,7 +65,7 @@ One major drawback with a Microservice based architecture is the difficulty sett
 
 In production you now have a number of choices for managing these environments; Mesos DC/OS, Kubernetes, Amazon ECS, Docker Swarm….. the list is getting bigger all the time. At Cake our preferred solution is Mesos DC/OS (see Ani’s blog: http://www.cakesolutions.net/teamblogs/smack-stack-on-dcos), however locally we can replicate this setup using docker-compose to define and manage services.
 
-In this blog series I will discuss using docker-compose to manage several Microservices and their dependencies, creating a reproducible environment that can be used for spawning any number of services with a single command.
+In this blog series I will discuss using `docker-compose` to manage several Microservices and their dependencies, creating a reproducible environment that can be used for spawning any number of services with a single command.
 
 This first part is all about *Dockerizing* your services from zero, we’ll then jump into defining the environment using Docker Compose in part 2.
 
@@ -282,12 +286,12 @@ Today we've `dockerized` three services, built the images and defined the `entry
 
 In part 2 we'll walkthrough the following
 
- - Creating a docker-compose.yml, defining each service along with appropriate dependencies
+ - Creating `docker-compose.yml`, defining each service along with appropriate dependencies
  - Defining environment specific configuration using volumes
  - Creating a Cassandra cluster and automatically initialising the various keyspaces, tables and data
  - Defining named volumes to re-use cassandra data between containers
  - Using Nginx to route requests to the appropriate service
  
-In the meantime, all code (including docker-compose) can be found on my github here: https://github.com/markglh/composing-microservices-with-sbt-docker.
+In the meantime, all code (including docker-compose) can be found on my github: https://github.com/markglh/composing-microservices-with-sbt-docker.
 Instructions of how to get this up and running are also documented, but will be covered in more detail in part 2.
 

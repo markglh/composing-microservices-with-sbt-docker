@@ -111,7 +111,8 @@ addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.3")
 
 addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.4.0")
 ```
-We can then get to work on our build.sbt
+
+We can then make a start on our build.sbt
 
 ```scala
 mainClass in assembly := Some("com.markglh.blog.Bootstrap")

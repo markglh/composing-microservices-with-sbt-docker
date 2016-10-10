@@ -56,7 +56,7 @@ docker volume rm markglh-cassandra-node3-data
 ## Blog
 All the source code and a markdown version of this blog is available on my github repo.
 
-The code is available here: (https://github.com/markglh/composing-microservices-with-sbt-docker)
+https://github.com/markglh/composing-microservices-with-sbt-docker
 
 ### Introduction
 A client that I’m working with recently joined the *Docker revolution*. One of the great things about Docker is how it allows you to easily replicate the production environment both on your local machine and within a CI environment, allowing you to run comprehensive integration tests both locally and as part of CI/CD.

@@ -21,6 +21,7 @@ e.g: <http://localhost:9000/aggregator/locations/6bcb1c95-a283-468a-a7ee-ce7f211
 
 Individual services are as follows:
 `http://localhost:9000/beacons/locations/<locationdId>`
+
 `http://localhost:9000/tracking/beacons/<beaconId>/<epochTime>`
 
 `Nginx` will route to the appropriate container based on the path
@@ -29,6 +30,7 @@ The Cassandra cluster has been initialised with data automatically, as follows:
 #####Beacons
 ```
 06ea8543-c6f2-4b32-96e2-89a88338403b, 3f60d4de-99d3-4652-bb42-db69ea0d2e6d, 44700c71-8d3b-42f8-a9d0-e5d2064d355b
+```
 
 #####Locations
 ```

@@ -85,7 +85,7 @@ So, we have 3 simple (tightly coupled) Scala services which communicate via REST
 
 **Note**: Whilst the architecture is somewhat questionable, it’ll serve us just fine for this demonstration.
 
-![alt text](composing-microservices-arch.png "Architecture")
+![Architecture](composing-microservices-arch.png)
 
 To reiterate, what we’re aiming to do is find everyone that was at a specific location at a specific time. We’ll ignore how that data came to exist and simply query it as follows:
 

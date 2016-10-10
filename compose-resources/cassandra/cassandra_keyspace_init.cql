@@ -1,12 +1,12 @@
 
-#Each service holds it's data in an exclusive keyspace
+-- Each service holds it's data in an exclusive keyspace
 
 CREATE KEYSPACE IF NOT EXISTS beacon_service WITH REPLICATION = {
   'class': 'NetworkTopologyStrategy',
   'DATA' : 2
 };
 
-CREATE TABLE IF NOT EXISTS beacon_service.beacon_by_location (
+CREATE TABLE IF NOT EXISTS beacon_service.beacons_by_location (
     location_id uuid,
     beacon_id uuid,
     beacon_name text,
@@ -27,16 +27,16 @@ CREATE TABLE IF NOT EXISTS tracking_service.users_by_beacon (
 ) WITH CLUSTERING ORDER BY (time_logged DESC);
 
 
-## Init the data for beacon_by_location
-insert into beacon_service.beacon_by_location (location_id, beacon_id, beacon_name ) VALUES ( 6bcb1c95-a283-468a-a7ee-ce7f21168b71, 06ea8543-c6f2-4b32-96e2-89a88338403b, 'Room1 Beacon');
+-- Init the data for beacons_by_location
+insert into beacon_service.beacons_by_location (location_id, beacon_id, beacon_name ) VALUES ( 6bcb1c95-a283-468a-a7ee-ce7f21168b71, 06ea8543-c6f2-4b32-96e2-89a88338403b, 'Room1 Beacon');
 
-insert into beacon_service.beacon_by_location (location_id, beacon_id, beacon_name ) VALUES ( 54acaf0a-bd29-4b40-b36e-bc63314ab5b4, 3f60d4de-99d3-4652-bb42-db69ea0d2e6d, 'Room2 Beacon');
+insert into beacon_service.beacons_by_location (location_id, beacon_id, beacon_name ) VALUES ( 54acaf0a-bd29-4b40-b36e-bc63314ab5b4, 3f60d4de-99d3-4652-bb42-db69ea0d2e6d, 'Room2 Beacon');
 
-insert into beacon_service.beacon_by_location (location_id, beacon_id, beacon_name ) VALUES ( 804ece81-86e0-4887-abb0-41b8aec08dd8, 250cd22b-1de4-4a6c-9ee5-761bf39204d0, 'Room3 Beacon');
+insert into beacon_service.beacons_by_location (location_id, beacon_id, beacon_name ) VALUES ( 804ece81-86e0-4887-abb0-41b8aec08dd8, 250cd22b-1de4-4a6c-9ee5-761bf39204d0, 'Room3 Beacon');
 
-insert into beacon_service.beacon_by_location (location_id, beacon_id, beacon_name ) VALUES ( ea47b13b-dc37-4523-830b-922bbb0dabc3, 42c75451-e0da-4481-b807-580bbb8c4bf2, 'Room4 Beacon');
+insert into beacon_service.beacons_by_location (location_id, beacon_id, beacon_name ) VALUES ( ea47b13b-dc37-4523-830b-922bbb0dabc3, 42c75451-e0da-4481-b807-580bbb8c4bf2, 'Room4 Beacon');
 
-insert into beacon_service.beacon_by_location (location_id, beacon_id, beacon_name ) VALUES ( 0b748d95-ad9e-4bd3-89ce-1f5fab50e81e, 44700c71-8d3b-42f8-a9d0-e5d2064d355b, 'Room5 Beacon');
+insert into beacon_service.beacons_by_location (location_id, beacon_id, beacon_name ) VALUES ( 0b748d95-ad9e-4bd3-89ce-1f5fab50e81e, 44700c71-8d3b-42f8-a9d0-e5d2064d355b, 'Room5 Beacon');
 
 
 ## Init the data for users_by_beacon (All same time, equivalent to ms epoch time: 1473156000)

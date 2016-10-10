@@ -48,10 +48,6 @@ publishTo := Some(Resolver.file("file", new File("artifacts")))
 cleanFiles <+= baseDirectory { base => base / "artifacts" }
 // ------
 
-fork in Test := false
-
-parallelExecution in Test := false
-
 scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
 
 
@@ -79,7 +75,7 @@ dockerfile in docker := {
 
   new Dockerfile {
     from("openjdk:8-jre")
-    maintainer("The Core Team")
+    maintainer("markglh")
     expose(80, 8080)
     env("APP_BASE", s"$imageAppBaseDir")
     env("APP_CONF", s"$appConfTarget")

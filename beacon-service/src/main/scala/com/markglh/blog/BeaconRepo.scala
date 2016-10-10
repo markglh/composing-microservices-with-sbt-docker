@@ -2,7 +2,7 @@ package com.markglh.blog
 
 import java.util.UUID
 
-import com.markglh.blog.BeaconRepo.BeaconByLocation
+import com.markglh.blog.BeaconRepo.BeaconsByLocation
 import io.getquill.{CassandraAsyncContext, SnakeCase}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -10,7 +10,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object BeaconRepo {
 
-  case class BeaconByLocation(locationId: UUID, beaconId: UUID, beaconName: String)
+  case class BeaconsByLocation(locationId: UUID, beaconId: UUID, beaconName: String)
 
 }
 
@@ -23,10 +23,10 @@ class BeaconRepo[Repo <: CassandraAsyncContext[SnakeCase]]()(implicit dbContext:
   private implicit val decodeUUID = mappedEncoding[String, UUID](UUID.fromString)
   private implicit val encodeUUID = mappedEncoding[UUID, String](_.toString)
 
-  def findBeaconByLocation(locationId: UUID): Future[List[BeaconByLocation]] = {
+  def findBeaconByLocation(locationId: UUID): Future[List[BeaconsByLocation]] = {
     dbContext.run(
       quote {
-        query[BeaconByLocation].filter(_.locationId == lift(locationId))
+        query[BeaconsByLocation].filter(_.locationId == lift(locationId))
       })
   }
 }

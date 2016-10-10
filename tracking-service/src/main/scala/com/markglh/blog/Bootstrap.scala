@@ -18,7 +18,7 @@ object Bootstrap extends ServerApp with Cassandra {
     .parseFile(new File(s"${sys.env.getOrElse("APP_CONF", ".")}/boot-configuration.conf"))
     .withFallback(ConfigFactory.load())
 
-  override def server(args: List[String]) = BlazeBuilder.bindHttp(8080, "0.0.0.0")
+  override def server(args: List[String]) = BlazeBuilder.bindHttp(80, "0.0.0.0")
     .mountService(TrackingService.routes(new TrackingRepo[CassandraAsyncContext[SnakeCase]]()), "/")
     .start
 }

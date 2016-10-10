@@ -3,13 +3,12 @@ package com.markglh.blog
 import java.io.File
 
 import com.typesafe.config.ConfigFactory
-import io.getquill.{CassandraAsyncContext, SnakeCase}
 import org.http4s.server.ServerApp
 import org.http4s.server.blaze.BlazeBuilder
 
 import scala.concurrent.ExecutionContext
 
-object Bootstrap extends ServerApp with Cassandra {
+object Bootstrap extends ServerApp {
   implicit val executionContext = ExecutionContext.global
 
   // This looks to (an optional) boot-configuration.conf first, then falls back to application.conf for any values not found
@@ -19,6 +18,7 @@ object Bootstrap extends ServerApp with Cassandra {
     .withFallback(ConfigFactory.load())
 
   override def server(args: List[String]) = BlazeBuilder.bindHttp(80, "0.0.0.0")
-    .mountService(BeaconService.routes(new BeaconRepo[CassandraAsyncContext[SnakeCase]]()), "/")
+    .mountService(AggregatorService.routes(config.getString("tracking.service.host"),
+      config.getString("beacon.service.host")), "/")
     .start
 }

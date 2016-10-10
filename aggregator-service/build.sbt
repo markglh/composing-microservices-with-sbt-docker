@@ -1,6 +1,6 @@
 import sbt._
 
-name := "tracking-service"
+name := "aggregator-service"
 
 organization := "cakesolutions"
 
@@ -13,7 +13,6 @@ lazy val circeVersion = "0.4.1"
 
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.1.7",
-  "io.getquill" %% "quill-cassandra" % "0.9.0",
   "com.typesafe" % "config" % "1.3.0" % "compile",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.4.0" % "compile",
   "org.http4s" %% "http4s-dsl" % http4sVersion,
@@ -36,9 +35,10 @@ mainClass in assembly := Some("com.markglh.blog.Bootstrap")
 
 // Resolve duplicates for Sbt Assembly
 assemblyMergeStrategy in assembly := {
-  case PathList(xs@_*) if xs.last == "io.netty.versions.properties" => MergeStrategy.rename
+  case PathList(xs @ _*) if xs.last == "io.netty.versions.properties" => MergeStrategy.rename
   case other => (assemblyMergeStrategy in assembly).value(other)
 }
+
 
 // publish to artifacts directory
 publishArtifact in(Compile, packageDoc) := false
@@ -48,7 +48,9 @@ publishTo := Some(Resolver.file("file", new File("artifacts")))
 cleanFiles <+= baseDirectory { base => base / "artifacts" }
 // ------
 
+
 scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
+
 
 
 //----------------

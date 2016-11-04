@@ -39,7 +39,7 @@ insert into beacon_service.beacons_by_location (location_id, beacon_id, beacon_n
 insert into beacon_service.beacons_by_location (location_id, beacon_id, beacon_name ) VALUES ( 0b748d95-ad9e-4bd3-89ce-1f5fab50e81e, 44700c71-8d3b-42f8-a9d0-e5d2064d355b, 'Room5 Beacon');
 
 
-## Init the data for users_by_beacon (All same time, equivalent to ms epoch time: 1473156000)
+-- Init the data for users_by_beacon (All same time, equivalent to ms epoch time: 1473156000)
 insert into tracking_service.users_by_beacon (beacon_id, time_logged, user_id, name) VALUES ( 06ea8543-c6f2-4b32-96e2-89a88338403b, '2016-09-06 10:00:00+0000', f525cff6-721e-11e6-8b77-86f30ca893d3 ,'Chris Goldbrook');
 
 insert into tracking_service.users_by_beacon (beacon_id, time_logged, user_id, name) VALUES ( 06ea8543-c6f2-4b32-96e2-89a88338403b, '2016-09-06 10:00:00+0000', 8010fa28-721f-11e6-8b77-86f30ca893d3 ,'Andy Stevens');

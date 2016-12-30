@@ -53,7 +53,7 @@ docker volume rm markglh-cassandra-node2-data
 docker volume rm markglh-cassandra-node3-data
 ```
 
-## Blog
+## Blog Part 1
 All the source code and a markdown version of this blog is available on my github repo.
 
 https://github.com/markglh/composing-microservices-with-sbt-docker
@@ -300,4 +300,265 @@ In part 2 we'll walkthrough the following:
  
 In the meantime, all code (including docker-compose) can be found on my github: https://github.com/markglh/composing-microservices-with-sbt-docker.
 Instructions of how to get this up and running are also documented, but will be covered in more detail in part 2.
+
+
+## Blog part 2
+In part one we learned about our Microservices, we dockerized them using `sbt-docker`, created our `entry point`  and finally configured them for Cassandra.
+
+This diagram from part 1 illustrates what we’re trying to achieve here:
+
+![Architecture](composing-microservices-arch.png)
+
+That’s all well and good, but we can’t even run them yet - so let’s get cracking!!
+
+## Docker Compose
+When we want to run a  docker container, we can simply use `docker run`. We can even run a number of containers and have them communicate with each other by binding ports on the host machine.  Something like this:
+```bash
+$ docker run --name cassandra -p 9042:9042 -v markglh-cassandra-node1-data:/var/lib/cassandra cassandra:3.9
+$ docker run --name beacon -p 9001:80 beacon-service:1.0.0-SNAPSHOT
+$ docker run --name tracking -p 9002:80 tracking-service:1.0.0-SNAPSHOT
+$ docker run --name aggregator -p 9000:80 aggregator-service:1.0.0-SNAPSHOT
+```
+
+As you can see, it gets pretty gnarly and that’s with only one Cassandra node, no initialisation and no NGINX.  Additionally it’s not likely to be trivial replicating this setup anywhere other than your laptop. 
+
+There are a growing number of ways to  run containers in environments; Mesos, Kubernetes, Amazon ECS, the list goes on. Surprisingly, given the name of the blog, we’re gonna run through using `docker-compose` for this. Compose itself lets you define your environment, including dependencies, paths and resources, this can then be spawned anywhere and combined with something like [`Docker Swarm`](https://www.docker.com/products/docker-swarm) to scale things out… but one step at a time!
+
+### Project Structure
+Within our repository, we’ve nested each service in it’s own directory - each of which is a fully contained `sbt` project. At the top level we’ve got our `base-containers.yml`, `docker-compose.yml` and our `compose-resources`. Let’s break this down and discuss each of these in detail.
+
+### compose-resources
+This is where the various compose resources live. We’ve split this up into `cassandra` and `nginx`. 
+
+#### nginx
+[NGINX](https://www.nginx.com/resources/wiki/) ) is a powerful HTTP Server and reverse proxy which we’re using to route requests to our services. Without this we’d have to know which port each container has `exposed` to be able to hit it from outside the `docker-compose` environment. The `nginx.conf` isn’t really important, all it’s doing is routing requests on port 80 to the appropriate service (via IP) depending on the path. 
+
+#### cassandra
+The Cassandra resources are essential for our Microservices to function. 
+To re-iterate what we said in part 1, docker doesn’t yet let you define what it means for a container to be started. You can define dependencies between containers to control the startup order, however sometimes we really want our application within the container to be running first - not just the container itself, this is where the `cassandra-init.sh` script comes in. 
+
+```bash
+/init/scripts/wait-for-it.sh -t 0 cassandra-node1:9042 -- echo "CASSANDRA Node1 started"
+/init/scripts/wait-for-it.sh -t 0 cassandra-node2:9042 -- echo "CASSANDRA Node2 started"
+/init/scripts/wait-for-it.sh -t 0 cassandra-node3:9042 -- echo "CASSANDRA Node3 started"
+
+cqlsh -f /init/scripts/cassandra_keyspace_init.cql cassandra
+
+echo "### CASSANDRA INITIALISED! ###"
+```
+
+This is what holds everything together. First it blocks using the `wait-for-it.sh` we discussed in part 1, waiting for each of the three Cassandra nodes to start and become available. It then runs `cassandra_keyspace_init.cql` which creates our tables and populates them with dummy data. 
+
+### base-containers.yml
+When using `docker-compose` it’s good practice to break down common definitions into smaller `yml` files which we can reuse and therefore reduce the complexity and duplication within our scripts.
+
+```yaml
+cassandra-base:
+    image: cassandra:2.1
+    networks:
+        - dockernet
+    environment:
+        WAIT_TIMEOUT: "60"
+        JVM_OPTS: "-Dcassandra.consistent.rangemovement=false"
+        CASSANDRA_CLUSTER_NAME: "DemoCluster"
+        CASSANDRA_ENDPOINT_SNITCH: "GossipingPropertyFileSnitch"
+        CASSANDRA_DC: "DATA"
+    restart: always # Sometimes it starts too fast, cheap way of retrying...
+```
+
+What we’re doing above is defining the `cassandra-base` container, which will be re-used for each of the Cassandra nodes later. We’re using the official Cassandra image from Docker Hub which allows us to override configuration values using environment variables.
+We also define a custom network, this is necessary so we can assign static IP addresses later - these will then match those defined in the `nginx.conf` discussed earlier.
+
+### docker-compose.yml
+This is where the real action is, there’s a lot going on so let’s break it down into bite-size chunks. nom.
+
+```yaml
+nginx:
+    image: nginx
+    ports:
+        - "9000:80"
+    environment:
+        NGINX_PORT: 80
+    volumes:
+        - ./compose-resources/nginx:/etc/nginx
+    networks:
+        - dockernet
+```
+
+* We’ve defined our `nginx` image.
+* Exposed port 80 from **within**  the `docker-compose` environment, binding it to port 9000 on the host machine.
+* Defined a volume for the `nginx.conf`. This mounts the config located in `compose-resources/nginx` to `/etc/nginx` within the running container. Thereby providing our custom configuration to NGINX.
+* Added `nginx` to our custom `dockernet` network we discussed earlier.
+
+With nginx sorted, it’s time to define our Cassandra nodes…
+
+```yaml
+cassandra-node1:
+    extends:
+        file: base-containers.yml
+        service: cassandra-base
+ volumes:
+        - markglh-cassandra-node1-data:/var/lib/cassandra # This bypasses the union filesystem, in favour of the host = faster.
+    ports:
+        - "9042:9042"
+```
+
+Above, we define the first Cassandra node, extending `cassandra-base` in the `base-containers.yml` file. This means we’ll get all the configuration we discussed earlier for free. Pay special attention to the volume here, we’re **not** mounting a volume from a specific host path as we did with NGINX. Instead we’re using a [`named volume`](https://docs.docker.com/engine/tutorials/dockervolumes/)  and mounting it into the container. This  volume doesn’t contain any special data, but it does give us a few niceties:
+
+* Volumes in docker bypass the [`Union` filesystem](https://blog.docker.com/2015/10/docker-basics-webinar-qa/) , which is the layered filesystem docker uses. This can improve performance when reading and writing lots of Cassandra data. It also has the additional benefit of allowing us to preserve the data both between runs (which would happen even without the volume) but also between different compose environments. As an example, you may have another compose file which spawns different services, but shares the same data. This wouldn’t be possible without volumes.
+
+We’ll skip the definitions for the other two Cassandra nodes as the configuration is virtually identical. We do however have one special Cassandra entry worth discussing.
+
+```yaml
+cassandra-init:
+    image: cassandra:2.1
+    volumes:
+        - ./compose-resources/cassandra:/init/scripts
+    command: bash /init/scripts/cassandra-init.sh
+    links:
+        - cassandra-node1:cassandra
+    restart: on-failure # Restart until we successfully run this script (it will fail until cassandra starts)
+    networks:
+        - dockernet
+```
+
+This is how we’re kicking off the `cassandra-init.sh` script we covered earlier.  We’re overriding the `init/scripts` directory within the container , providing our own init script. We then use a `command` to invoke this script when the container starts. This overrides the normal behaviour of the container (starting Cassandra) and allows us to run our scripts with everything we need available; namely `cqlsh`. Without having to install those manually in a custom Image.
+In all honesty it’s encroaching on “hack” territory. However it works, pretty reliably. In a future blog post I’ll walk through how we’d generally handle Cassandra schemas in a production environment, I like the schema definitions to live with the Microservice’s code in GitHub.
+
+We’ve finally made it to the service definitions!
+
+```yaml
+aggregator-service:
+    image: aggregator-service:1.0.0-SNAPSHOT
+    expose:
+        - "80"
+        - "8080"
+        - "9000"
+    ports:
+        - "80:80"
+    stdin_open: true
+    links:
+        - beacon-service
+        - tracking-service
+        - nginx
+    restart: always
+    networks:
+        dockernet:
+            ipv4_address: 172.16.2.10
+```
+
+* First off, we’re using the image we created in part 1. 
+* The service uses a few different ports, so we expose them and bind to port 80 on the host machine.
+* `stdin_open` This keeps the stdin open, preventing any premature shutdowns.
+* `links` let us specify dependencies on other containers, this makes sure the other container starts as a prerequisite and lets us refer to it by name. We’ll discuss this soon.
+* We could have defined a `volume` here and mounted a `boot-configuration.conf` at the `APP_CONF` path which we defined in our `build.sbt`. Our `Bootstrap.scala` looks for this configuration before loading the default one, this allows us to provide a different configuration file per environment.
+* Finally we make sure our service restarts if anything happens and we bind it to a static IP on our `dockernet` network - allowing NGINX to route requests to it.
+
+The other services all follow the same pattern with one exception.
+
+```yaml
+...
+links:
+        - cassandra-node1:cassandra
+...
+```
+
+There is a subtle difference here in that we’re providing an `alias` for cassandra-node1 - allowing us to refer to it as `cassandra`, this matches the configuration provided in `application.conf`.
+
+It’s worth noting that these services would be a good candidate for moving common definitions into the `base-containers.yml`, I decided against that here for simplicity.
+
+Before we move on, we’ll quickly cover the final few bits in the `yml`
+
+```yaml
+# The custom bridge network allows us to specify static IPs for our services - useful for Nginx setup
+networks:
+    dockernet:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+            - subnet: 172.16.2.0/24
+              gateway: 172.16.2.1
+
+# We use names volumes to store cassandra data, this allows our data to persist between different compose files
+volumes:
+    markglh-cassandra-node1-data:
+        external:
+            name: markglh-cassandra-node1-data
+    markglh-cassandra-node2-data:
+        external:
+            name: markglh-cassandra-node2-data
+    markglh-cassandra-node3-data:
+        external:
+            name: markglh-cassandra-node3-data
+
+```
+
+As we’re using a custom network, we need to define it somewhere, we specify the driver and IP range, you can read more about this [here](https://docs.docker.com/compose/networking/) . We’re also defining the named volumes we discussed earlier, note that you must manually create the volumes outside of this `yml`. For example `docker volume create --name markglh-cassandra-node1-data`. This will create the volume and make it available for our `docker-compose` environment to use.
+
+### Linking everything up
+So, we’ve built our Microservices, we’ve dockerized them, and we’re defined the environment using `docker-compose`. What are we missing? How do the services communicate with each other?
+
+Let’s take a quick look at the `application.conf` of our Aggregation service.
+
+```java
+tracking.service {
+   host = "tracking-service"
+}
+
+beacon.service {
+   host = "beacon-service"
+}
+```
+
+We’re referring to the other services using the names we’ve specified in the `docker-compose.yml`, we do the same for `cassandra` - using the alias we specified. This is how `docker-compose` makes it simple for our services to communicate with one another.
+
+## Setup and run!
+This part’s easy, first create the named volumes for Cassandra
+
+```bash
+docker volume create --name markglh-cassandra-node1-data
+docker volume create --name markglh-cassandra-node2-data
+docker volume create --name markglh-cassandra-node3-data
+```
+
+Next, we want to run `sbt docker` to build the image for each of our Microservices - I’ve added a script in the root directory to do this for you:
+
+```bash
+./build-all.sh
+```
+
+Finally start the compose environment:
+
+```bash
+docker-compose up
+```
+
+Boom! We’re done, let’s make a request to our Aggregator service with some data from `cassandra_keyspace_init.cql`:
+
+http://localhost:9000/aggregator/locations/6bcb1c95-a283-468a-a7ee-ce7f21168b71/1473156000
+
+```json
+[{
+  "userId": "f525cff6-721e-11e6-8b77-86f30ca893d3",
+  "name": "Chris Goldbrook",
+  "timeLogged": "2016-09-06T10:00:00",
+  "beaconName": "Room1 Beacon"
+}, {
+  "userId": "8010fa28-721f-11e6-8b77-86f30ca893d3",
+  "name": "Andy Stevens",
+  "timeLogged": "2016-09-06T10:00:00",
+  "beaconName": "Room1 Beacon"
+}, {
+  "userId": "88b66e10-721f-11e6-8b77-86f30ca893d3",
+  "name": "Nev Best",
+  "timeLogged": "2016-09-06T10:00:00",
+  "beaconName": "Room1 Beacon"
+}]
+```
+
+This request is being routed to the aggregator service via NGINX. The aggregator is then hitting the two other services which results in two Cassandra calls, before aggregating and returning the response. See the diagram at the beginning for an illustration of how this is being fulfilled. 
+
+## Wrap up
+So, we’ve created 3 Microservices, dockerized them, defined our environment, preloaded our data, routed requests using a proxy and linked it all together. I hope you found this a useful introduction to Docker and docker-compose. Feel free to comment below or follow me on twitter [@markglh](https://twitter.com/markglh)
 

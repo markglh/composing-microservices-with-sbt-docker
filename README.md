@@ -305,10 +305,6 @@ Instructions of how to get this up and running are also documented, but will be 
 ## Blog part 2
 In part one we learned about our Microservices, we dockerized them using `sbt-docker`, created our `entry point`  and finally configured them for Cassandra.
 
-This diagram from part 1 illustrates what we’re trying to achieve here:
-
-![Architecture](composing-microservices-arch.png)
-
 That’s all well and good, but we can’t even run them yet - so let’s get cracking!!
 
 ## Docker Compose

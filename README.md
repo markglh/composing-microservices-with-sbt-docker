@@ -327,7 +327,7 @@ Within our repository, we’ve nested each service in it’s own directory - eac
 This is where the various compose resources live. We’ve split this up into `cassandra` and `nginx`. 
 
 #### nginx
-[NGINX](https://www.nginx.com/resources/wiki/) ) is a powerful HTTP Server and reverse proxy which we’re using to route requests to our services. Without this we’d have to know which port each container has `exposed` to be able to hit it from outside the `docker-compose` environment. The `nginx.conf` isn’t really important, all it’s doing is routing requests on port 80 to the appropriate service (via IP) depending on the path. 
+[NGINX](https://www.nginx.com/resources/wiki/) is a powerful HTTP Server and reverse proxy which we’re using to route requests to our services. Without this we’d have to know which port each container has `exposed` to be able to hit it from outside the `docker-compose` environment. The `nginx.conf` isn’t really important, all it’s doing is routing requests on port 80 to the appropriate service (via IP) depending on the path. 
 
 #### cassandra
 The Cassandra resources are essential for our Microservices to function. 

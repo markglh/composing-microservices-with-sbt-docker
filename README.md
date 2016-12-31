@@ -530,10 +530,44 @@ Finally start the compose environment:
 docker-compose up
 ```
 
-Boom! We’re done, let’s make a request to our Aggregator service with some data from `cassandra_keyspace_init.cql`:
+Boom! We’re done, let’s make a few requests with the data defined in `cassandra_keyspace_init.cql`:
 
-http://localhost:9000/aggregator/locations/6bcb1c95-a283-468a-a7ee-ce7f21168b71/1473156000
+First, can we hit the tracking and beacon services directly?
 
+GET: http://localhost:9000/beacons/locations/6bcb1c95-a283-468a-a7ee-ce7f21168b71
+```json
+[{
+  "locationId": "6bcb1c95-a283-468a-a7ee-ce7f21168b71",
+  "beaconId": "06ea8543-c6f2-4b32-96e2-89a88338403b",
+  "beaconName": "Room1 Beacon"
+}]
+```
+
+GET: http://localhost:9000/tracking/beacons/06ea8543-c6f2-4b32-96e2-89a88338403b/1473156000
+```json
+[{
+  "beaconId": "06ea8543-c6f2-4b32-96e2-89a88338403b",
+  "timeLogged": "2016-09-06T10:00:00",
+  "userId": "f525cff6-721e-11e6-8b77-86f30ca893d3",
+  "name": "Chris Goldbrook"
+}, {
+  "beaconId": "06ea8543-c6f2-4b32-96e2-89a88338403b",
+  "timeLogged": "2016-09-06T10:00:00",
+  "userId": "8010fa28-721f-11e6-8b77-86f30ca893d3",
+  "name": "Andy Stevens"
+}, {
+  "beaconId": "06ea8543-c6f2-4b32-96e2-89a88338403b",
+  "timeLogged": "2016-09-06T10:00:00",
+  "userId": "88b66e10-721f-11e6-8b77-86f30ca893d3",
+  "name": "Nev Best"
+}]
+``` 
+
+Above, we make two requests directly to the tracking and beacon services, which query Cassandra and respond with a JSON body. Note that we’re using port 9000, this is the NGINX port, which forwards the requests to the appropriate service based on the URL.
+
+Now let’s try the aggregator service:
+
+GET: http://localhost:9000/aggregator/locations/6bcb1c95-a283-468a-a7ee-ce7f21168b71/1473156000
 ```json
 [{
   "userId": "f525cff6-721e-11e6-8b77-86f30ca893d3",
@@ -553,7 +587,9 @@ http://localhost:9000/aggregator/locations/6bcb1c95-a283-468a-a7ee-ce7f21168b71/
 }]
 ```
 
-This request is being routed to the aggregator service via NGINX. The aggregator is then hitting the two other services which results in two Cassandra calls, before aggregating and returning the response. See the diagram at the beginning for an illustration of how this is being fulfilled. 
+This request is being routed to the aggregator service via NGINX. The aggregator is then hitting the two other services which results in two Cassandra calls, before aggregating and returning the response. See the diagram below for an illustration of how this is being fulfilled. 
+
+![Sequence](composing-microservices-seq.png)
 
 ## Wrap up
 So, we’ve created 3 Microservices, dockerized them, defined our environment, preloaded our data, routed requests using a proxy and linked it all together. I hope you found this a useful introduction to Docker and docker-compose. Feel free to comment below or follow me on twitter [@markglh](https://twitter.com/markglh)

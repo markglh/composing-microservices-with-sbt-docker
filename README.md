@@ -303,7 +303,7 @@ Instructions of how to get this up and running are also documented, but will be 
 
 
 ## Blog part 2
-In part one we learned about our Microservices, we dockerized them using `sbt-docker`, created our `entry point`  and finally configured them for Cassandra.
+In part one we learned about our Microservices, we dockerized them using `sbt-docker`, created our `entry point`,  and finally configured them for Cassandra.
 
 That’s all well and good, but we can’t even run them yet - so let’s get cracking!!
 
@@ -318,7 +318,7 @@ $ docker run --name aggregator -p 9000:80 aggregator-service:1.0.0-SNAPSHOT
 
 As you can see, it gets pretty gnarly and that’s with only one Cassandra node, no initialisation and no NGINX.  Additionally it’s not likely to be trivial replicating this setup anywhere other than your laptop. 
 
-There are a growing number of ways to  run containers in environments; Mesos, Kubernetes, Amazon ECS, the list goes on. Surprisingly, given the name of the blog, we’re gonna run through using `docker-compose` for this. Compose itself lets you define your environment, including dependencies, paths and resources, this can then be spawned anywhere and combined with something like [`Docker Swarm`](https://www.docker.com/products/docker-swarm) to scale things out… but one step at a time!
+There are a growing number of ways to  run containers in environments; Mesos, Kubernetes, Amazon ECS, the list goes on. Unsurprisingly, given the name of the blog, we’re gonna focus on using `docker-compose` for this. Compose itself lets you define your environment, including dependencies, paths, and resources.his can then be spawned anywhere and combined with something like [`Docker Swarm`](https://www.docker.com/products/docker-swarm) to scale things out… but one step at a time!
 
 ### Project Structure
 Within our repository, we’ve nested each service in it’s own directory - each of which is a fully contained `sbt` project. At the top level we’ve got our `base-containers.yml`, `docker-compose.yml` and our `compose-resources`. Let’s break this down and discuss each of these in detail.
@@ -418,7 +418,7 @@ cassandra-init:
         - dockernet
 ```
 
-This is how we’re kicking off the `cassandra-init.sh` script we covered earlier.  We’re overriding the `init/scripts` directory within the container , providing our own init script. We then use a `command` to invoke this script when the container starts. This overrides the normal behaviour of the container (starting Cassandra) and allows us to run our scripts with everything we need available; namely `cqlsh`. Without having to install those manually in a custom Image.
+This is how we’re kicking off the `cassandra-init.sh` script we covered earlier.  We’re overriding the `init/scripts` directory within the container, providing our own init script. We then use a `command` to invoke this script when the container starts. This overrides the normal behaviour of the container (starting Cassandra) and allows us to run our scripts with everything we need available; namely `cqlsh`. Without having to install those manually in a custom Image.
 In all honesty it’s encroaching on “hack” territory. However it works, pretty reliably. In a future blog post I’ll walk through how we’d generally handle Cassandra schemas in a production environment, I like the schema definitions to live with the Microservice’s code in GitHub.
 
 We’ve finally made it to the service definitions!
